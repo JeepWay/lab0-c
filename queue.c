@@ -29,15 +29,47 @@ void q_free(struct list_head *head)
     free(head);
 }
 
+/* Create a element_t object with the given string */
+element_t *q_new_element(char *s)
+{
+    element_t *e = malloc(sizeof(element_t));
+    if (!e)
+        return NULL;
+
+    char *tmp = strdup(s);
+    if (!tmp) {
+        free(e);
+        return NULL;
+    }
+    e->value = tmp;
+    return e;
+}
+
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+
+    element_t *e = q_new_element(s);
+    if (!e)
+        return false;
+
+    list_add(&e->list, head);
     return true;
 }
 
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+
+    element_t *e = q_new_element(s);
+    if (!e)
+        return false;
+
+    list_add_tail(&e->list, head);
     return true;
 }
 
