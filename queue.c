@@ -217,8 +217,57 @@ void q_reverseK(struct list_head *head, int k)
     list_splice_init(&sub_list, cur_head);
 }
 
+static void q_merge_two(struct list_head *head,
+                        struct list_head *left,
+                        struct list_head *right,
+                        bool descend)
+{
+    struct list_head *l = left->next;
+    struct list_head *r = right->next;
+
+    while (l != left && r != right) {
+        const element_t *l_elem = list_entry(l, element_t, list);
+        const element_t *r_elem = list_entry(r, element_t, list);
+
+        int cmp = strcmp(l_elem->value, r_elem->value);
+        if (descend ? (cmp >= 0) : (cmp <= 0)) {
+            l = l->next;
+            list_move_tail(l->prev, head);
+        } else {
+            r = r->next;
+            list_move_tail(r->prev, head);
+        }
+    }
+    /* Append remaining nodes */
+    if (l != left)
+        list_splice_tail(left, head);
+    if (r != right)
+        list_splice_tail(right, head);
+}
+
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    struct list_head *front = head->next;
+    struct list_head *end = head->prev;
+    /* Find the middle node of the linked list */
+    while (front != end && front->next != end) {
+        front = front->next;
+        end = end->prev;
+    }
+    struct list_head *mid = end;
+
+    LIST_HEAD(left);
+    LIST_HEAD(right);
+    list_splice_tail_init(head, &right);
+    list_cut_position(&left, &right, mid->prev);
+    q_sort(&left, descend);
+    q_sort(&right, descend);
+    q_merge_two(head, &left, &right, descend);
+}
 
 /* Remove every node which has a node with a strictly less/greater value
  * anywhere to the right side of it according to descend flag */
