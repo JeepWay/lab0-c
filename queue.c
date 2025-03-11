@@ -240,9 +240,9 @@ static void q_merge_two(struct list_head *head,
     }
     /* Append remaining nodes */
     if (l != left)
-        list_splice_tail(left, head);
+        list_splice_tail_init(left, head);
     if (r != right)
-        list_splice_tail(right, head);
+        list_splice_tail_init(right, head);
 }
 
 /* Sort elements of queue in ascending/descending order */
@@ -319,5 +319,18 @@ int q_descend(struct list_head *head)
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head || list_empty(head) || list_is_singular(head))
+        return q_size(head);
+
+    queue_contex_t *current = list_entry(head->next, queue_contex_t, chain);
+    queue_contex_t *next = list_entry(head->next->next, queue_contex_t, chain);
+    int queue_num = q_size(head);
+    while (queue_num > 1) {
+        LIST_HEAD(merged);
+        q_merge_two(&merged, current->q, next->q, descend);
+        list_splice_tail_init(&merged, current->q);
+        next = list_entry(next->chain.next, queue_contex_t, chain);
+        queue_num--;
+    }
+    return q_size(current->q);
 }
