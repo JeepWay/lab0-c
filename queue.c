@@ -90,8 +90,8 @@ element_t *q_remove(struct list_head *head,
     list_del_init(&element->list);
 
     if (sp) {
-        size_t len = strlen(element->value) + 1;
-        memcpy(sp, element->value, len);
+        memcpy(sp, element->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
     }
     return element;
 }
