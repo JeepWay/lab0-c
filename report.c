@@ -127,6 +127,15 @@ void report(int level, char *fmt, ...)
         buffer[len] = '\n';
         buffer[len + 1] = '\0';
         web_send(web_connfd, buffer);
+        if (strstr(fmt, "Current queue ID")) {
+            if (write(web_connfd, "<br>\0", 5) == -1)
+                perror("write");
+            return;
+        }
+        if (write(web_connfd, "\0", 1) == -1)
+            perror("write");
+        close(web_connfd);
+        web_connfd = 0;
     }
 }
 

@@ -3,6 +3,7 @@
  */
 
 #include <arpa/inet.h> /* inet_ntoa */
+#include <assert.h>
 #include <errno.h>
 #include <netinet/tcp.h>
 #include <stdio.h>
@@ -120,7 +121,20 @@ static ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen)
 
 void web_send(int out_fd, char *buf)
 {
-    writen(out_fd, buf, strlen(buf));
+    assert(writen(out_fd, buf, strlen(buf)) == strlen(buf));
+}
+
+void send_response(int out_fd)
+{
+    char *buf =
+        "HTTP/1.1 200 OK\r\n%s%s%s%s%s%s"
+        "Content-Type: text/html\r\n\r\n"
+        "<html><head>"
+        "<style>body{font-family: cursive; font-size: 13px;}"
+        "td {padding: 1.5px 6px;}"
+        "</style><link rel=\"shortcut icon\" href=\"data:,\">"
+        "</head><body><table>\n";
+    web_send(out_fd, buf);
 }
 
 int web_open(int port)
@@ -234,7 +248,8 @@ char *web_recv(int fd, struct sockaddr_in *clientaddr)
     return ret;
 }
 
-int web_eventmux(char *buf, size_t buflen)
+int web_connfd;
+int web_eventmux(char *buf)
 {
     fd_set listenset;
 
@@ -253,16 +268,13 @@ int web_eventmux(char *buf, size_t buflen)
         FD_CLR(server_fd, &listenset);
         struct sockaddr_in clientaddr;
         socklen_t clientlen = sizeof(clientaddr);
-        int web_connfd =
+        web_connfd =
             accept(server_fd, (struct sockaddr *) &clientaddr, &clientlen);
 
         char *p = web_recv(web_connfd, &clientaddr);
-        char *buffer = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
-        web_send(web_connfd, buffer);
-        strncpy(buf, p, buflen);
-        buf[buflen] = '\0';
+        send_response(web_connfd);
+        strncpy(buf, p, strlen(p) + 1);
         free(p);
-        close(web_connfd);
         return strlen(buf);
     }
 
