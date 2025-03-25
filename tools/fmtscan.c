@@ -232,6 +232,12 @@ static char *printfs[] = {
     "WARN",     "warning",   "WARNING",   "WARN_ON",  "warnx",
 };
 
+/* HTML-related tags to ignore */
+static char *ignore_html_tags[] = {
+    "href",
+    "rel",
+};
+
 static uint8_t mapping[256] ALIGNED(64);
 
 static void set_mapping(void)
@@ -396,9 +402,22 @@ static inline int read_dictionary(const char *dictfile)
     return 0;
 }
 
+static inline bool is_ignored_html_tag(const char *word)
+{
+    for (size_t i = 0; i < SIZEOF_ARRAY(ignore_html_tags); i++) {
+        if (strcmp(word, ignore_html_tags[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static inline void add_bad_spelling(const char *word, const size_t len)
 {
     if (find_word(word, printf_nodes, printf_node_heap))
+        return;
+
+    if (is_ignored_html_tag(word))
         return;
 
     bad_spellings_total++;
