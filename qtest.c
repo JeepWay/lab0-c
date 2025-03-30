@@ -86,6 +86,47 @@ typedef enum {
 /* Forward declarations */
 static bool q_show(int vlevel);
 
+static void q_shuffle(struct list_head *head)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    int len = q_size(head);
+    struct list_head *left;
+    struct list_head *right = head;
+    for (; len > 1; len--, right = right->prev) {
+        int idx = rand() % len;
+        if (idx == len - 1)
+            continue;
+
+        left = head;
+        while (idx--)
+            left = left->next;
+        list_move(right->prev, left);
+        list_move_tail(left->next->next, right);
+    }
+}
+
+static bool do_shuffle(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s takes no arguments", argv[0]);
+        return false;
+    }
+
+    bool ok = true;
+    if (!current || !current->q)
+        report(3, "Warning: Calling shuffle on null queue");
+    error_check();
+
+    if (current && exception_setup(true))
+        q_shuffle(current->q);
+    exception_cancel();
+
+    q_show(3);
+    return ok;
+}
+
 static bool do_free(int argc, char *argv[])
 {
     if (argc != 1) {
@@ -1096,6 +1137,7 @@ static void console_init()
                 "");
     ADD_COMMAND(reverseK, "Reverse the nodes of the queue 'K' at a time",
                 "[K]");
+    ADD_COMMAND(shuffle, "Shuffle the given queue", "");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
